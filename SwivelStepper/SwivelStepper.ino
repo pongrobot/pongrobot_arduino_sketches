@@ -6,13 +6,15 @@
 #include <MultiDriver.h>
 #include <SyncDriver.h>
 
-DRV8825 stepper(200, 8, 9, 3, 5, 6);
+DRV8825 stepper(200, 8, 9);
 
 void setup() {
   stepper.begin(50, 32);
   stepper.enable();
   stepper.setSpeedProfile(BasicStepperDriver::LINEAR_SPEED, 200, 200);
   stepper.startMove(200 * 32);
+  pinMode(7, OUTPUT);
+  digitalWrite(7, HIGH);
 }
 
 void loop() {

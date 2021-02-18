@@ -1,0 +1,22 @@
+[{
+    "id": "in",
+    "type": "joystick"
+}, {
+    "id": "logger",
+    "type": "console-output"
+}, {
+    "id": "arduino",
+    "type": "telemetryjet-arduino-sdk",
+    "options": {
+        "port": "COM6",
+        "baudrate": 115700,
+        "dimensions": {
+            "in.axis1": 1,
+            "currentPosOutput": 2,
+            "targetPosOutput": 4,
+            "stateOutput": 3
+        },
+        "inputFilter": [],
+        "outputFilter": []
+    }
+}]
