@@ -4,17 +4,23 @@
 #include <AccelStepper.h>
 
 AccelStepper stepper(AccelStepper::DRIVER, 9, 8);
-TelemetryJet telemetry(&Serial, 100);
+
+// Swivel state machine 
+#define SWIVEL_IDLE 0
+#define SWIVEL_CALIBRATE_BOUNDS_LOW 1
+#define SWIVEL_CALIBRATE_BOUNDS_HIGH 2
+#define SWIVEL_MOVING 3
+#define SWIVEL_ERROR 4
+
+// Launcher state machine
+#define LAUNCHER_IDLE 0
+#define LAUNCHER_EXTENDING 1
+#define LAUNCHER_RETRACTING 2
 
 int state = 0;
 long highPos = 0;
 long targetPos = 0;
 bool clearedEndStop = false;
-
-Dimension targetPosInput = telemetry.createDimension(1);
-Dimension currentPosOutput = telemetry.createDimension(2);
-Dimension targetPosOutput = telemetry.createDimension(4);
-Dimension stateOutput = telemetry.createDimension(3);
 
 void setup() {  
   // Pin 7: Enable the stepper driver
@@ -32,18 +38,15 @@ void setup() {
   // Limit switches
   pinMode(2, INPUT_PULLUP);
   pinMode(4, INPUT_PULLUP);
-  
-  Serial.begin(115200);
 
+  // Set max speed and acceleration for the stepper
   stepper.setSpeed(1000);
   stepper.setMaxSpeed(1000);
   stepper.setAcceleration(2000);
 }
 
 void loop() {
-  // Update the telemetry stream
-  telemetry.update();
-  
+  // Check limit switches
   bool limitLow = !digitalRead(2);
   bool limitHigh = !digitalRead(4);
   
@@ -95,8 +98,6 @@ void loop() {
     }
   }
 
-  currentPosOutput.setInt32(stepper.currentPosition());
-  targetPosOutput.setInt32(stepper.targetPosition());
-  stateOutput.setInt32(state);
+  // Update the stepper driver
   stepper.run();
 }
