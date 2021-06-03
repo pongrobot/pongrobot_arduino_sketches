@@ -14,7 +14,6 @@
 #define SWIVEL_CALIBRATE_BOUNDS_LOW 1   // Swivel is calibrating a lower bound.
 #define SWIVEL_CALIBRATE_BOUNDS_HIGH 2  // Swivel is calibrating an upper bound. 
 #define SWIVEL_MOVING 3                 // Swivel moving towards a position.
-#define SWIVEL_ERROR 4                  // Swivel encountered an error/abort state.
 
 // Yaw Swivel constants
 #define SWIVEL_STEP_ENABLE 7
@@ -45,13 +44,17 @@
 int iLauncherState = LAUNCHER_IDLE;
 unsigned long lLauncherLastAction = 0;
 bool bWantsLaunch = false;
+bool bHasCommand = false;
 Servo launcherServo; 
 
 // Swivel variables & state
 int iSwivelState = SWIVEL_CALIBRATE_BOUNDS_LOW;
 long lSwivelHighPos = 0;
+long lSwivelNewTargetPos = 0;
 long lSwivelTargetPos = 0;
 bool bSwivelClearedEndStop = false;
+bool bYawIsReady = false;
+bool bHasNewCommand = false;
 AccelStepper stepper(AccelStepper::DRIVER, SWIVEL_STEP_PIN, SWIVEL_DIRECTION_PIN);
 
 unsigned long lLastHeartbeatMsg = 0;
@@ -68,7 +71,13 @@ void triggerCommandCallback(const std_msgs::Empty& launch_msg) {
 void yawCommandCallback(const std_msgs::Int8& yaw_msg) {
   // Yaw message will be a value from -90 to 90 inclusive
   // Convert this to a target position.
-  lSwivelTargetPos = constrain(map(yaw_msg.data, -90, 90, 0, lSwivelHighPos),0, lSwivelHighPos);
+  lSwivelNewTargetPos = constrain(map(yaw_msg.data, -90, 90, 0, lSwivelHighPos),0, lSwivelHighPos);
+  if (lSwivelNewTargetPos != lSwivelTargetPos) {
+    lSwivelTargetPos = lSwivelNewTargetPos;
+    bYawIsReady = false;
+    bHasCommand = true;
+    bHasNewCommand = true;
+  }
 }
 
 ros::Subscriber<std_msgs::Int8> yawSubscriber("yaw_cmd", &yawCommandCallback);
@@ -77,26 +86,12 @@ ros::Subscriber<std_msgs::Empty> triggerSubscriber("trigger", &triggerCommandCal
 std_msgs::Bool ready_msg;
 ros::Publisher readyPublisher("yaw_ready", &ready_msg);
 
-//std_msgs::Int8 swivel_state_msg;
-//std_msgs::Int8 launcher_state_msg;
-//ros::Publisher swivelStatePublisher("swivel_state", &swivel_state_msg);
-//ros::Publisher launcherStatePublisher("launcher_state", &launcher_state_msg);
-
 // ---------------------------------------------------
 // ROS SETUP
 
-void sendStatusMsg() {
-  //swivel_state_msg.data = iSwivelState;
-  //launcher_state_msg.data = iLauncherState;
-  //swivelStatePublisher.publish(&swivel_state_msg);
-  //launcherStatePublisher.publish(&launcher_state_msg);
-  //nh.spinOnce();
-}
-
-void sendReadyMsg(bool isReady) {
-  ready_msg.data = isReady;
+void sendReadyMsg() {
+  ready_msg.data = bYawIsReady && bHasCommand;
   readyPublisher.publish(&ready_msg);
-  nh.spinOnce();
 }
 
 void setup() {
@@ -121,8 +116,8 @@ void setup() {
   pinMode(SWIVEL_LIMIT_HIGH_PIN, INPUT_PULLUP);
   
   // Set max speed and acceleration for the stepper
-  stepper.setSpeed(1000);
-  stepper.setMaxSpeed(1000);
+  stepper.setSpeed(1500);
+  stepper.setMaxSpeed(1500);
   stepper.setAcceleration(2000);
 
   // Start calibration mode
@@ -149,6 +144,9 @@ void loop() {
     if (nh.connected()) {
       digitalWrite(SWIVEL_STEP_ENABLE, HIGH);
       iSwivelState = SWIVEL_CALIBRATE_BOUNDS_LOW;
+      bYawIsReady = false;
+      sendReadyMsg();
+      nh.spinOnce();
     }
     return;
   }
@@ -157,15 +155,17 @@ void loop() {
   bool limitLow = !digitalRead(2);
   bool limitHigh = !digitalRead(4);
 
-  
   switch (iSwivelState) {
     case SWIVEL_IDLE: {
-      nh.spinOnce();
-      stepper.moveTo(lSwivelTargetPos);
-      stepper.run();
-      if (stepper.isRunning()) {
+      if (bHasNewCommand) {
         iSwivelState = SWIVEL_MOVING;
+        bYawIsReady = false;
+      } else {
+        bYawIsReady = true;
       }
+      sendReadyMsg();
+      nh.spinOnce();
+      
       break;
     }
     case SWIVEL_CALIBRATE_BOUNDS_LOW: {
@@ -175,6 +175,10 @@ void loop() {
         stepper.stop();
         iSwivelState = SWIVEL_CALIBRATE_BOUNDS_HIGH;
         stepper.setCurrentPosition(0);
+        
+        bYawIsReady = false;
+        sendReadyMsg();
+        nh.spinOnce();
       }
       break;
     }
@@ -191,29 +195,23 @@ void loop() {
         // set target pos to middle of range
         lSwivelTargetPos = lSwivelHighPos / 2;
         bSwivelClearedEndStop = false;
+        
+        bYawIsReady = false;
+        sendReadyMsg();
+        nh.spinOnce();
       }
       break;
     }
     case SWIVEL_MOVING: {
+      stepper.moveTo(lSwivelTargetPos);
       stepper.run();
       if (!stepper.isRunning()) {
         iSwivelState = SWIVEL_IDLE;
+        bHasNewCommand = false;
+        bYawIsReady = true;
+        sendReadyMsg();
+        nh.spinOnce();
       }
-      
-      if (limitLow || limitHigh) {
-        if (bSwivelClearedEndStop) {
-          stepper.stop();
-          iSwivelState = SWIVEL_ERROR;
-        }
-      } else {
-        bSwivelClearedEndStop = true;
-      }
-      break;
-    }
-    case SWIVEL_ERROR: {
-      // Disable the stepper. Something went wrong.
-      stepper.stop();
-      digitalWrite(SWIVEL_STEP_ENABLE, LOW);
       break;
     }
   }
