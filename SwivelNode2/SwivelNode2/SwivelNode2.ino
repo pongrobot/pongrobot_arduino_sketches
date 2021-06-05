@@ -71,8 +71,8 @@ void triggerCommandCallback(const std_msgs::Empty& launch_msg) {
 void yawCommandCallback(const std_msgs::Int8& yaw_msg) {
   // Yaw message will be a value from -90 to 90 inclusive
   // Convert this to a target position.
-  lSwivelNewTargetPos = constrain(map(yaw_msg.data, -90, 90, 0, lSwivelHighPos),0, lSwivelHighPos);
-  if (lSwivelNewTargetPos != lSwivelTargetPos) {
+  lSwivelNewTargetPos = constrain(map(-yaw_msg.data, -90, 90, 0, lSwivelHighPos),0, lSwivelHighPos);
+  if (lSwivelNewTargetPos != lSwivelTargetPos || bHasCommand == false) {
     lSwivelTargetPos = lSwivelNewTargetPos;
     bYawIsReady = false;
     bHasCommand = true;
@@ -187,7 +187,6 @@ void loop() {
       stepper.run();
       if (limitHigh) {
         stepper.stop();
-        iSwivelState = SWIVEL_IDLE;
         lSwivelHighPos = stepper.currentPosition();
         stepper.setCurrentPosition(lSwivelHighPos);
         stepper.run();
@@ -196,6 +195,7 @@ void loop() {
         lSwivelTargetPos = lSwivelHighPos / 2;
         bSwivelClearedEndStop = false;
         
+        iSwivelState = SWIVEL_MOVING;
         bYawIsReady = false;
         sendReadyMsg();
         nh.spinOnce();
