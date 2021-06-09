@@ -37,6 +37,9 @@
 #define LAUNCHER_EXTEND_DURATION 500  // Time it takes the launcher servo to extend
 #define LAUNCHER_RETRACT_DURATION 500 // Time it takes the launcher servo to retract
 
+// Ball Detector constants
+#define BALL_DETECTOR_PIN 
+
 // ---------------------------------------------------
 // GLOBAL VARIABLES
 
@@ -46,6 +49,9 @@ unsigned long lLauncherLastAction = 0;
 bool bWantsLaunch = false;
 bool bHasCommand = false;
 Servo launcherServo; 
+
+// Ball Detector state
+bool bHasBall = false;
 
 // Swivel variables & state
 int iSwivelState = SWIVEL_CALIBRATE_BOUNDS_LOW;
@@ -86,8 +92,16 @@ ros::Subscriber<std_msgs::Empty> triggerSubscriber("trigger", &triggerCommandCal
 std_msgs::Bool ready_msg;
 ros::Publisher readyPublisher("yaw_ready", &ready_msg);
 
+std_msgs::Bool ball_msg;
+ros::Publisher ballPublisher("has_ball", &ball_msg);
+
 // ---------------------------------------------------
 // ROS SETUP
+
+void sendBallMsg() {
+  ball_msg.data = bHasBall;
+  ballPublisher.publish(&ball_msg);
+}
 
 void sendReadyMsg() {
   ready_msg.data = bYawIsReady && bHasCommand;
@@ -114,6 +128,9 @@ void setup() {
   // Stepper limit switches
   pinMode(SWIVEL_LIMIT_LOW_PIN, INPUT_PULLUP);
   pinMode(SWIVEL_LIMIT_HIGH_PIN, INPUT_PULLUP);
+
+  // Ball detector
+  pinMode(BALL_DETECTOR_PIN, INPUT_PULLUP);
   
   // Set max speed and acceleration for the stepper
   stepper.setSpeed(1500);
@@ -152,8 +169,11 @@ void loop() {
   }
 
   // Check limit switches
-  bool limitLow = !digitalRead(2);
-  bool limitHigh = !digitalRead(4);
+  bool limitLow = !digitalRead(SWIVEL_LIMIT_LOW_PIN);
+  bool limitHigh = !digitalRead(SWIVEL_LIMIT_HIGH_PIN);
+
+  // Check ball detector
+  bool hasBall = !digitalRead(BALL_DETECTOR_PIN); 
 
   switch (iSwivelState) {
     case SWIVEL_IDLE: {
@@ -163,6 +183,13 @@ void loop() {
       } else {
         bYawIsReady = true;
       }
+
+      // Send a single "has ball" message when we detect a ball
+      if (!bHasBall && hasBall) {
+        bHasBall = true;
+        sendBallMsg();
+      }
+      
       sendReadyMsg();
       nh.spinOnce();
       
@@ -240,6 +267,9 @@ void loop() {
       if (millis() - lLauncherLastAction > LAUNCHER_RETRACT_DURATION) {
         iLauncherState = LAUNCHER_IDLE;
         bWantsLaunch = false;
+
+        // Reset "Has ball" status after we have launched the ball
+        bHasBall = false;
       }
       break;
     }
