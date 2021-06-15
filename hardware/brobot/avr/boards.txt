@@ -1,0 +1,90 @@
+# Custom Board Configuration for Brobot
+# This repurposes the sparkfun board configuration to write custom information to 
+# uniquely identify Pro Micros
+# -------------------------------------------------------------------------------
+# Spark Board Contribution Configuration
+#
+# For more information see:
+# * https://github.com/arduino/Arduino/wiki/Arduino-IDE-1.5---3rd-party-Hardware-specification
+# * https://github.com/arduino/Arduino/wiki/Arduino-Hardware-Cores-migration-guide-from-1.0-to-1.6
+#
+
+menu.cpu=Processor
+
+
+################################################################################
+# Pro Micro #1: Brobot Launcher
+################################################################################
+brobot_launcher.name=Brobot Launcher Node
+
+brobot_launcher.upload.tool=avrdude
+brobot_launcher.upload.protocol=avr109
+brobot_launcher.upload.maximum_size=28672
+brobot_launcher.upload.maximum_data_size=2560
+brobot_launcher.upload.speed=57600
+brobot_launcher.upload.disable_flushing=true
+brobot_launcher.upload.use_1200bps_touch=true
+brobot_launcher.upload.wait_for_upload_port=true
+
+brobot_launcher.bootloader.tool=avrdude
+brobot_launcher.bootloader.unlock_bits=0x3F
+brobot_launcher.bootloader.lock_bits=0x2F
+brobot_launcher.bootloader.low_fuses=0xFF
+brobot_launcher.bootloader.high_fuses=0xD8
+
+brobot_launcher.build.board=AVR_PROMICRO
+brobot_launcher.build.core=arduino:arduino
+brobot_launcher.build.variant=promicro
+brobot_launcher.build.mcu=atmega32u4
+brobot_launcher.build.usb_product="Brobot Launcher"
+brobot_launcher.build.vid=0x1b4f
+brobot_launcher.build.extra_flags={build.usb_flags}
+
+brobot_launcher.menu.cpu.16MHzatmega32U4=ATmega32U4 (5V, 16 MHz)
+
+brobot_launcher.menu.cpu.16MHzatmega32U4.build.pid.0=0x9205
+brobot_launcher.menu.cpu.16MHzatmega32U4.build.pid.1=0x9206
+brobot_launcher.menu.cpu.16MHzatmega32U4.build.pid=0x9206
+brobot_launcher.menu.cpu.16MHzatmega32U4.build.f_cpu=16000000L
+
+brobot_launcher.menu.cpu.16MHzatmega32U4.bootloader.extended_fuses=0xCB
+brobot_launcher.menu.cpu.16MHzatmega32U4.bootloader.file=caterina/Caterina-promicro16.hex
+
+
+################################################################################
+# Pro Micro #2: Brobot TF
+################################################################################
+brobot_tf.name=Brobot TF Node
+
+brobot_tf.upload.tool=avrdude
+brobot_tf.upload.protocol=avr109
+brobot_tf.upload.maximum_size=28672
+brobot_tf.upload.maximum_data_size=2560
+brobot_tf.upload.speed=57600
+brobot_tf.upload.disable_flushing=true
+brobot_tf.upload.use_1200bps_touch=true
+brobot_tf.upload.wait_for_upload_port=true
+
+brobot_tf.bootloader.tool=avrdude
+brobot_tf.bootloader.unlock_bits=0x3F
+brobot_tf.bootloader.lock_bits=0x2F
+brobot_tf.bootloader.low_fuses=0xFF
+brobot_tf.bootloader.high_fuses=0xD8
+
+brobot_tf.build.board=AVR_PROMICRO
+brobot_tf.build.core=arduino:arduino
+brobot_tf.build.variant=promicro
+brobot_tf.build.mcu=atmega32u4
+brobot_tf.build.usb_product="Brobot TF"
+brobot_tf.build.vid=0x1b4f
+brobot_tf.build.extra_flags={build.usb_flags}
+
+brobot_tf.menu.cpu.16MHzatmega32U4=ATmega32U4 (5V, 16 MHz)
+
+brobot_tf.menu.cpu.16MHzatmega32U4.build.pid.0=0x9205
+brobot_tf.menu.cpu.16MHzatmega32U4.build.pid.1=0x9206
+brobot_tf.menu.cpu.16MHzatmega32U4.build.pid=0x9206
+brobot_tf.menu.cpu.16MHzatmega32U4.build.f_cpu=16000000L
+
+brobot_tf.menu.cpu.16MHzatmega32U4.bootloader.extended_fuses=0xCB
+brobot_tf.menu.cpu.16MHzatmega32U4.bootloader.file=caterina/Caterina-promicro16.hex

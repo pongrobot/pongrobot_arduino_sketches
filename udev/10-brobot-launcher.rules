@@ -1,0 +1,1 @@
+ACTION=="add", ATTRS{product}=="Brobot Launcher", SYMLINK+="brobot_launcher"
