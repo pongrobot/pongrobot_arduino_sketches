@@ -38,7 +38,7 @@
 #define LAUNCHER_RETRACT_DURATION 500 // Time it takes the launcher servo to retract
 
 // Ball Detector constants
-#define BALL_DETECTOR_PIN 
+#define BALL_DETECTOR_PIN 15
 
 // ---------------------------------------------------
 // GLOBAL VARIABLES
@@ -52,6 +52,7 @@ Servo launcherServo;
 
 // Ball Detector state
 bool bHasBall = false;
+bool bHasBallLatch = false;
 
 // Swivel variables & state
 int iSwivelState = SWIVEL_CALIBRATE_BOUNDS_LOW;
@@ -115,7 +116,7 @@ void setup() {
 
   // Initialize stepper motor
   pinMode(SWIVEL_STEP_ENABLE, OUTPUT);
-  digitalWrite(SWIVEL_STEP_ENABLE, LOW);
+  digitalWrite(SWIVEL_STEP_ENABLE, HIGH);
   
   // Set to use full microstepping
   pinMode(SWIVEL_MICROSTEP_PIN_1, OUTPUT);
@@ -147,6 +148,7 @@ void setup() {
   nh.subscribe(yawSubscriber);
   nh.subscribe(triggerSubscriber);
   nh.advertise(readyPublisher);
+  nh.advertise(ballPublisher);
 
 }
 
@@ -155,12 +157,12 @@ void setup() {
 
 void loop() {
   if (!nh.connected()) {
-    digitalWrite(SWIVEL_STEP_ENABLE, LOW);
+    //digitalWrite(SWIVEL_STEP_ENABLE, LOW);
     nh.spinOnce();
 
     if (nh.connected()) {
-      digitalWrite(SWIVEL_STEP_ENABLE, HIGH);
-      iSwivelState = SWIVEL_CALIBRATE_BOUNDS_LOW;
+      //digitalWrite(SWIVEL_STEP_ENABLE, HIGH);
+      //iSwivelState = SWIVEL_CALIBRATE_BOUNDS_LOW;
       bYawIsReady = false;
       sendReadyMsg();
       nh.spinOnce();
@@ -173,7 +175,8 @@ void loop() {
   bool limitHigh = !digitalRead(SWIVEL_LIMIT_HIGH_PIN);
 
   // Check ball detector
-  bool hasBall = !digitalRead(BALL_DETECTOR_PIN); 
+  // Latch so once it's on, needs to be reset manually
+  bHasBall = !digitalRead(BALL_DETECTOR_PIN) || bHasBallLatch;
 
   switch (iSwivelState) {
     case SWIVEL_IDLE: {
@@ -184,12 +187,11 @@ void loop() {
         bYawIsReady = true;
       }
 
-      // Send a single "has ball" message when we detect a ball
-      if (!bHasBall && hasBall) {
-        bHasBall = true;
-        sendBallMsg();
+      // Send ball status while we are idle
+      if (bHasBall) {
+        bHasBallLatch = true;
       }
-      
+      //sendBallMsg();
       sendReadyMsg();
       nh.spinOnce();
       
@@ -270,6 +272,9 @@ void loop() {
 
         // Reset "Has ball" status after we have launched the ball
         bHasBall = false;
+        bHasBallLatch = false;
+        //sendBallMsg();
+        //nh.spinOnce();
       }
       break;
     }
