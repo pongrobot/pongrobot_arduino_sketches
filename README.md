@@ -4,8 +4,8 @@ This repository holds prototype Arduino sketches to evaluate sensor breakouts, m
 
 ## Installing udev rules.
 
-For the software to properly identify hardware devices, udev rules should be installed. There are two udev rules for the Arduinos. Install them by creating symlinks:
+For the software to properly identify hardware devices, udev rules should be installed. There are two udev rules for the Arduinos. Install them by copying into the /etc/udev/rules.d folder:
 ```
-sudo ln -s /home/bro/pongrobot_arduino_sketches/udev/10-brobot-launcher.rules /etc/udev/rules.d/10-brobot-launcher.rules
-sudo ln -s /home/bro/pongrobot_arduino_sketches/udev/11-brobot-tf.rules /etc/udev/rules.d/11-brobot-tf.rules
+sudo cp /home/bro/pongrobot_arduino_sketches/udev/10-brobot-launcher.rules /etc/udev/rules.d
+sudo cp /home/bro/pongrobot_arduino_sketches/udev/11-brobot-tf.rules /etc/udev/rules.d
 ```
