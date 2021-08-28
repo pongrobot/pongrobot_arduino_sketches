@@ -1,1 +1,1 @@
-ACTION=="add", ATTRS{product}=="Brobot TF", SYMLINK+="brobot_tf"
+ACTION=="add", ATTRS{product}=="Brobot TF", MODE="0666", GROUP="dialout", SYMLINK+="brobot_tf"

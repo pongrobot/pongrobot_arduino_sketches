@@ -1,1 +1,1 @@
-ACTION=="add", ATTRS{product}=="Brobot Launcher", SYMLINK+="brobot_launcher"
+ACTION=="add", ATTRS{product}=="Brobot Launcher", MODE="0666", GROUP="dialout", SYMLINK+="brobot_launcher"
