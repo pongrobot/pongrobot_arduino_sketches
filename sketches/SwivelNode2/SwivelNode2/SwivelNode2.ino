@@ -14,6 +14,7 @@
 #define SWIVEL_CALIBRATE_BOUNDS_LOW 1   // Swivel is calibrating a lower bound.
 #define SWIVEL_CALIBRATE_BOUNDS_HIGH 2  // Swivel is calibrating an upper bound. 
 #define SWIVEL_MOVING 3                 // Swivel moving towards a position.
+#define SWIVEL_MOVING_YAW_REJECT 4      // Swivel performing yaw reject operation.
 
 // Yaw Swivel constants
 #define SWIVEL_STEP_ENABLE 7
@@ -232,6 +233,16 @@ void loop() {
       break;
     }
     case SWIVEL_MOVING: {
+      // Move slightly past target position
+      stepper.moveTo(lSwivelTargetPos + 20);
+      stepper.run();
+      if (!stepper.isRunning()) {
+        iSwivelState = SWIVEL_MOVING_YAW_REJECT;
+      }
+      break;
+    }
+    case SWIVEL_MOVING_YAW_REJECT: {
+      // Move back to target position
       stepper.moveTo(lSwivelTargetPos);
       stepper.run();
       if (!stepper.isRunning()) {
