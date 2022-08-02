@@ -177,7 +177,16 @@ void loop() {
 
   // Check ball detector
   // Latch so once it's on, needs to be reset manually
-  bHasBall = !digitalRead(BALL_DETECTOR_PIN) || bHasBallLatch;
+  if (iLauncherState == LAUNCHER_IDLE) {
+    bHasBall = !digitalRead(BALL_DETECTOR_PIN) || bHasBallLatch;
+    if (bHasBall) {
+      bHasBallLatch = true;
+    }
+  } else {
+    // Can't have a ball if the launcher is active!
+    bHasBall = false;
+    bHasBallLatch = false;
+  }
 
   switch (iSwivelState) {
     case SWIVEL_IDLE: {
@@ -187,15 +196,9 @@ void loop() {
       } else {
         bYawIsReady = true;
       }
-
-      // Send ball status while we are idle
-      if (bHasBall) {
-        bHasBallLatch = true;
-      }
-      //sendBallMsg();
+      sendBallMsg();
       sendReadyMsg();
       nh.spinOnce();
-      
       break;
     }
     case SWIVEL_CALIBRATE_BOUNDS_LOW: {
@@ -234,7 +237,11 @@ void loop() {
     }
     case SWIVEL_MOVING: {
       // Move slightly past target position
-      stepper.moveTo(lSwivelTargetPos + 20);
+      if (lSwivelTargetPos > (lSwivelHighPos/2)) {
+        stepper.moveTo(lSwivelTargetPos + 40);
+      } else {
+        stepper.moveTo(lSwivelTargetPos - 40);
+      }
       stepper.run();
       if (!stepper.isRunning()) {
         iSwivelState = SWIVEL_MOVING_YAW_REJECT;
@@ -284,8 +291,8 @@ void loop() {
         // Reset "Has ball" status after we have launched the ball
         bHasBall = false;
         bHasBallLatch = false;
-        //sendBallMsg();
-        //nh.spinOnce();
+        sendBallMsg();
+        nh.spinOnce();
       }
       break;
     }
